@@ -103,7 +103,7 @@ Before you begin, make sure you have:
 ### Step 1 — Clone the repository
 
 ```bash
-git clone https://github.com/YOUR_USERNAME/koodap.git
+git clone https://github.com/marisprabhu/koodap.git
 cd koodap
 ```
 
@@ -324,4 +324,4 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-<p align="center">Built with ❤️ by the Koodap team · <a href="https://github.com/YOUR_USERNAME/koodap">github.com/YOUR_USERNAME/koodap</a></p>
+<p align="center">Built with ❤️ by the Koodap team · <a href="https://github.com/marisprabhu/koodap">github.com/marisprabhu/koodap</a></p>
