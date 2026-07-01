@@ -1,0 +1,58 @@
+"""
+LifeLog AI — Local Whisper transcription server
+Runs on your PC; the app sends audio and gets back text.
+
+Install:
+  pip install fastapi uvicorn openai-whisper pydub python-multipart
+
+  # For GPU acceleration (optional, much faster):
+  pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+Run:
+  uvicorn main:app --host 0.0.0.0 --port 8001
+
+First run downloads the model (~140 MB for 'base', ~1.5 GB for 'large').
+'base' is fast and accurate enough for clear speech.
+"""
+
+import io
+import tempfile
+import os
+import whisper
+from fastapi import FastAPI, File, UploadFile
+from pydub import AudioSegment
+
+app = FastAPI()
+
+# Options: "tiny", "base", "small", "medium", "large"
+# "base" is the sweet spot for speed vs accuracy on CPU
+MODEL_SIZE = os.getenv("WHISPER_MODEL", "base")
+print(f"Loading Whisper model: {MODEL_SIZE} ...")
+model = whisper.load_model(MODEL_SIZE)
+print("Model ready.")
+
+
+def _convert_to_wav(data: bytes) -> str:
+    """Convert any audio format to a temp WAV file Whisper can read."""
+    audio = AudioSegment.from_file(io.BytesIO(data))
+    audio = audio.set_channels(1).set_frame_rate(16000)
+    tmp = tempfile.NamedTemporaryFile(suffix=".wav", delete=False)
+    audio.export(tmp.name, format="wav")
+    return tmp.name
+
+
+@app.post("/transcribe")
+async def transcribe(file: UploadFile = File(...)):
+    data = await file.read()
+    wav_path = _convert_to_wav(data)
+    try:
+        result = model.transcribe(wav_path, fp16=False)
+        return {"text": result["text"].strip(), "language": result.get("language", "en")}
+    finally:
+        os.unlink(wav_path)
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok", "model": MODEL_SIZE}
+
